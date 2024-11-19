@@ -13,7 +13,7 @@ class FinancialView {
     }
 
     updateMovements(movements) {
-        this.movementsTableBody.innerHTML = '';
+        this.movementsTableBody.textContent = '';
 
         movements.forEach(movement => {
             const row = document.createElement('tr');
@@ -21,7 +21,7 @@ class FinancialView {
             const iconAlt = movement.type === 'income' ? 'Ingreso' : 'Egreso';
 
             const dateOnly = movement.date.split(' ')[0];
-            row.innerHTML = `
+            row.textContent = `
                 <td class="icon-cell">
                     <img src="${iconSrc}" alt="${iconAlt}" class="icon-img">
                 </td>

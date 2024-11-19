@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const pocketDiv = document.createElement('div');
         pocketDiv.classList.add('pocket');
         pocketDiv.style.backgroundColor = color;
-        pocketDiv.innerHTML = `
+        pocketDiv.textContent = `
             <span class="pocket-id" style="display:none;">${id}</span>
             <span class="pocket-name">${name}</span>
             <span class="pocket-value">$${new Intl.NumberFormat().format(value)}</span>
