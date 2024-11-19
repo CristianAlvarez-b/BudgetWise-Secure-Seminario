@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 import eci.edu.code.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.owasp.encoder.Encode;
 import java.util.List;
 
 @RestController
@@ -39,6 +39,7 @@ public class AnswerController {
         String username = userService.getUsernameFromToken(token);  // Obtener el username usando el token
         if (username != null) {
             answer.setUsername(username);  // Establecer el username en la respuesta
+            answer.setText(sanitize(answer.getText()));
             answerService.createAnswer(answer);  // Crear la respuesta
             return ResponseEntity.status(HttpStatus.CREATED).body("Answer created successfully");
         } else {
@@ -49,5 +50,8 @@ public class AnswerController {
     @DeleteMapping("/{id}")
     public void deleteAnswer(@PathVariable Long id) {
         answerService.deleteAnswer(id);
+    }
+    public String sanitize(String input) {
+        return input == null ? null : Encode.forHtmlContent(input);
     }
 }

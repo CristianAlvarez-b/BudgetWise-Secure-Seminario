@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.owasp.encoder.Encode;
+
 
 @RestController
 @RequestMapping("/api/questions")
@@ -40,7 +42,7 @@ public class QuestionController {
 
         // Asigna el nombre de usuario a la pregunta
         question.setUsername(username);
-
+        question.setText(sanitize(question.getText()));
         // Guarda la pregunta usando el servicio
         questionService.createQuestion(question);
         return ResponseEntity.ok("Question created successfully");
@@ -49,5 +51,9 @@ public class QuestionController {
     @DeleteMapping("/{id}")
     public void deleteQuestion(@PathVariable Long id) {
         questionService.deleteQuestion(id);
+    }
+
+    public String sanitize(String input) {
+        return input == null ? null : Encode.forHtmlContent(input);
     }
 }
