@@ -125,7 +125,7 @@ class FinancialController {
         faqButton.addEventListener('click', async () => {
             await this.model.loadQuestions();
             const questions = this.model.getQuestions();
-            this.view.questionsContainer.innerHTML = ''; // Limpiar el contenedor de preguntas
+            this.view.questionsContainer.textContent = ''; // Limpiar el contenedor de preguntas
             questions.forEach(question => {
                 this.view.addQuestionToContainer(question); // Agregar cada pregunta a la vista
             });

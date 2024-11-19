@@ -20,7 +20,7 @@ class FinancialView {
             return; // Salir si no es un array
         }
     
-        this.movementsTableBody.innerHTML = ''; // Limpiar el contenido previo
+        this.movementsTableBody.textContent = ''; // Limpiar el contenido previo
     
         // Crear el contenido de la tabla usando map y join
         const rows = movements.map(movement => {
@@ -102,7 +102,7 @@ class FinancialView {
         }).join('');
     
         // Insertar todas las filas en el cuerpo de la tabla
-        this.movementsTableBody.innerHTML = rows; 
+        this.movementsTableBody.innerHTML = rows;
     }
 
 
@@ -239,7 +239,7 @@ class FinancialView {
         answers.forEach(answer => {
             const answerElement = document.createElement('div');
             answerElement.classList.add('answer');
-            answerElement.innerHTML = answer.text; // Suponiendo que la respuesta tiene un texto
+            answerElement.textContent = answer.text; // Suponiendo que la respuesta tiene un texto
     
             // Crear viñeta antes de la respuesta
             const bulletPoint = document.createElement('span');
