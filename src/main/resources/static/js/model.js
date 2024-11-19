@@ -6,18 +6,27 @@ class FinancialModel {
         this.questions = [];
         this.answers = [];
         this.balance = 0;
-        this.token = localStorage.getItem('token'); // Suponiendo que el token está guardado en localStorage
+        //this.token = localStorage.getItem('token'); // Suponiendo que el token está guardado en localStorage
         this.APIURL = "/api/";
+        const tokenData = JSON.parse(localStorage.getItem('token')); // Recuperar el objeto
+        if (tokenData) {
+            this.token = tokenData.jwt;  // Acceder a jwt
+            this.csrfToken = tokenData.csrfToken;  // Acceder a csrfToken
+        } else {
+            // Manejar el caso en que no se encuentre el token
+            console.error('Token not found in localStorage');
+        }
+
         //this.loadMovements();
         this.loadQuestions();
     }
 
     async loadMovements() {
         try {
-            const token = this.token;
             const response = await fetch(`${this.APIURL}movements/`, {
                 headers: {
-                    'Authorization': token,
+                    'Authorization': this.token,
+                    'X-CSRF-Token': this.csrfToken,
                     'Content-Type': 'application/json'
                 }
             });
@@ -37,7 +46,7 @@ class FinancialModel {
                     type: item.type
                 };
                 this.movements.push(movement);
-               
+
             });
             this.updateBalance();
         } catch (error) {
@@ -62,13 +71,13 @@ class FinancialModel {
 
     async addQuestion(questionText) {
         try {
-            const token = this.token;
             const question = { text: questionText };
 
             const response = await fetch(`${this.APIURL}questions/`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': token,
+                    'Authorization': this.token,
+                    'X-CSRF-Token': this.csrfToken,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(question)
@@ -97,7 +106,8 @@ class FinancialModel {
             const response = await fetch(`${this.APIURL}answers`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': token,
+                    'Authorization': this.token,
+                    'X-CSRF-Token': this.csrfToken,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(body)
@@ -122,7 +132,8 @@ class FinancialModel {
             const token = this.token;
             const response = await fetch(`${this.APIURL}questions/`, {
                 headers: {
-                    'Authorization': token,
+                    'Authorization': this.token,
+                    'X-CSRF-Token': this.csrfToken,
                     'Content-Type': 'application/json'
                 }
             });
@@ -151,7 +162,8 @@ class FinancialModel {
             const token = this.token;
             const response = await fetch(`${this.APIURL}answers/${questionId}`, {
                 headers: {
-                    'Authorization': token,
+                    'Authorization': this.token,
+                    'X-CSRF-Token': this.csrfToken,
                     'Content-Type': 'application/json'
                 }
             });
@@ -184,7 +196,8 @@ class FinancialModel {
             const response = await fetch(`${this.APIURL}movements/`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': token,
+                    'Authorization': this.token,
+                    'X-CSRF-Token': this.csrfToken,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(body)
@@ -207,7 +220,8 @@ class FinancialModel {
             const response = await fetch(`${this.APIURL}movements/${realIndex}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': token,
+                    'Authorization': this.token,
+                    'X-CSRF-Token': this.csrfToken,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(updatedMovement)
@@ -229,7 +243,8 @@ class FinancialModel {
             const response = await fetch(`${this.APIURL}movements/${id}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': token,
+                    'Authorization': this.token,
+                    'X-CSRF-Token': this.csrfToken,
                     'Content-Type': 'application/json'
                 }
             });
@@ -250,23 +265,24 @@ class FinancialModel {
             const formData = new FormData();
             formData.append('targetUsername', userName);
             formData.append('amount', value);
-    
+
             // Realiza la solicitud POST al endpoint de transferencias
             const response = await fetch(`${this.APIURL}movements/transfer`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': token,
+                    'Authorization': this.token,
+                    'X-CSRF-Token': this.csrfToken,
                     // 'Content-Type' no se necesita porque FormData lo maneja automáticamente
                 },
                 body: formData, // Enviar los datos como FormData
             });
-    
+
             // Si la respuesta no es exitosa, lanza un error
             if (!response.ok) {
                 const responseText = await response.text();
                 throw new Error(`Error en la transferencia: ${responseText}`);
             }
-    
+
             // Si la transferencia es exitosa, actualiza los movimientos y el balance
             await this.loadMovements();
             Swal.fire({
@@ -275,7 +291,7 @@ class FinancialModel {
                 showConfirmButton: false,
                 timer: 2500,
             });
-    
+
         } catch (error) {
             console.error('Error al realizar la transferencia:', error);
             Swal.fire({
@@ -285,10 +301,10 @@ class FinancialModel {
             });
         }
     }
-    
+
     updateBalance() {
         let balance = 0; // Inicializa el balance en 0
-    
+
         // Itera sobre los movimientos
         for (const movement of this.movements) {
             if (movement.type === 'income' || movement.type === 'pocketOutcome' || movement.type === 'transferIn') {
@@ -297,10 +313,10 @@ class FinancialModel {
                 balance -= movement.value; // Resta al balance si es gasto
             }
         }
-    
+
         // Guarda el balance actualizado en el localStorage (o cualquier otro sistema de persistencia)
         localStorage.setItem('balance', balance);
-    
+
         // También puedes actualizar una variable de instancia si es necesario
         this.balance = balance;
     }

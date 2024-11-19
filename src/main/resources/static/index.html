@@ -45,45 +45,50 @@
 
     <script>
         // Manejador para el inicio de sesión
-        document.getElementById('loginForm').addEventListener('submit', function (event) {
+        document.getElementById('loginForm').addEventListener('submit', async function (event) {
             event.preventDefault();
 
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            fetch('/api/users/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password })
-            })
-                .then(response => {
-                    if (response.ok) {
-                        return response.text(); // Obtener el token del cuerpo de la respuesta
-                    }
-                    throw new Error('Login failed');
-                })
-                .then(data => {
-                    const token = data; // Suponiendo que la respuesta es directamente el token
-                    localStorage.setItem('token', token);
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Login successful',
-                        showConfirmButton: false,
-                        timer: 1500
-                    }).then(() => {
-                        window.location.href = '/html/home.html';
-                    });
-                })
-                .catch(error => {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: error.message,
-                    });
+            try {
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
                 });
+
+                if (!response.ok) {
+                    throw new Error('Login failed');
+                }
+
+                const data = await response.json();
+
+                // Guardar el token en sessionStorage
+                sessionStorage.setItem('jwt', data.jwt);
+                sessionStorage.setItem('csrfToken', data.csrfToken);
+
+                // Mostrar la alerta de login exitoso
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Login successful',
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    // Redirigir al home después de la alerta
+                    window.location.href = '/html/home.html';
+                });
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message,
+                });
+            }
         });
+
 
         // Manejador para el registro
         document.getElementById('signupForm').addEventListener('submit', function (event) {
@@ -131,7 +136,7 @@
                         });
                     }
                 })
-                
+
         });
 
         // Mostrar el formulario de registro
