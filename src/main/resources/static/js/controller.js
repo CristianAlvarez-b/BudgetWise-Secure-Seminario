@@ -10,7 +10,7 @@ class FinancialController {
 
     }
     async initialize() {
-        await this.model.loadMovements(); // Cargar movimientos desde la API
+        await this.model.initialize();
         this.view.updateBalance(this.model.balance);
         this.updateView(); // Mover esta línea aquí para asegurarse de que se llama después de cargar los movimientos
         this.initEventListeners();

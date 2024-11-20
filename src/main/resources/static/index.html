@@ -67,8 +67,9 @@
                 const data = await response.json();
 
                 // Guardar el token en sessionStorage
-                sessionStorage.setItem('jwt', data.jwt);
-                sessionStorage.setItem('csrfToken', data.csrfToken);
+                //sessionStorage.setItem('jwt', data.jwt);
+                //sessionStorage.setItem('csrfToken', data.csrfToken);
+                await saveTokenEncrypted({ jwt: data.jwt, csrfToken: data.csrfToken });
 
                 // Mostrar la alerta de login exitoso
                 Swal.fire({
@@ -138,6 +139,95 @@
                 })
 
         });
+        function openDatabase() {
+            return new Promise((resolve, reject) => {
+                console.log("Abriendo la base de datos...");
+                const request = indexedDB.open('TokenDB', 1);
+
+                // Crear el almacén de objetos si es necesario
+                request.onupgradeneeded = (event) => {
+                    console.log("Creando almacén de objetos 'tokens'...");
+                    const db = event.target.result;
+                    db.createObjectStore('tokens', { keyPath: 'id' });
+                };
+
+                request.onsuccess = (event) => {
+                    console.log("Base de datos abierta con éxito.");
+                    resolve(event.target.result);
+                };
+
+                request.onerror = (event) => {
+                    console.error("Error al abrir la base de datos:", event.target.error);
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        const secretKey = 'budgetWise'; // Clave de cifrado
+
+        // Cifrar los datos
+        function encryptData(data) {
+            console.log("Cifrando datos...");
+            return CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
+        }
+
+        // Descifrar los datos
+        function decryptData(cipherText) {
+            console.log("Descifrando datos...");
+            const bytes = CryptoJS.AES.decrypt(cipherText, secretKey);
+            return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+        }
+
+        // Guardar token cifrado
+        function saveTokenEncrypted(tokenData) {
+            console.log("Guardando token encriptado...");
+            const encryptedData = encryptData(tokenData);
+
+            return openDatabase().then((db) => {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction('tokens', 'readwrite');
+                    const store = transaction.objectStore('tokens');
+                    const request = store.put({ id: 'auth', data: encryptedData });
+
+                    request.onsuccess = () => {
+                        console.log("Token guardado exitosamente.");
+                        resolve();
+                    };
+
+                    request.onerror = (event) => {
+                        console.error("Error al guardar el token:", event.target.error);
+                        reject(event.target.error);
+                    };
+                });
+            });
+        }
+
+        // Recuperar token descifrado
+        function getTokenDecrypted() {
+            console.log("Recuperando token descifrado...");
+            return openDatabase().then((db) => {
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction('tokens', 'readonly');
+                    const store = transaction.objectStore('tokens');
+                    const request = store.get('auth');
+
+                    request.onsuccess = () => {
+                        if (request.result) {
+                            console.log("Token recuperado:", request.result.data);
+                            resolve(decryptData(request.result.data));
+                        } else {
+                            console.log("No se encontró ningún token.");
+                            resolve(null);
+                        }
+                    };
+
+                    request.onerror = (event) => {
+                        console.error("Error al recuperar el token:", event.target.error);
+                        reject(event.target.error);
+                    };
+                });
+            });
+        }
 
         // Mostrar el formulario de registro
         document.getElementById('signupLink').addEventListener('click', function (event) {
@@ -162,6 +252,8 @@
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
 </body>
 
 </html>

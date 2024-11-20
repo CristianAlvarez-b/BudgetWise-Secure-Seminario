@@ -8,19 +8,72 @@ class FinancialModel {
         this.balance = 0;
         //this.token = localStorage.getItem('token'); // Suponiendo que el token está guardado en localStorage
         this.APIURL = "/api/";
-        const tokenData = JSON.parse(localStorage.getItem('token')); // Recuperar el objeto
-        if (tokenData) {
-            this.token = tokenData.jwt;  // Acceder a jwt
-            this.csrfToken = tokenData.csrfToken;  // Acceder a csrfToken
-        } else {
-            // Manejar el caso en que no se encuentre el token
-            console.error('Token not found in localStorage');
-        }
+        this.secretKey = 'budgetWise';
+        this.initialize();
 
-        //this.loadMovements();
-        this.loadQuestions();
     }
+    async initialize() {
+        try {
+            await this.loadToken(); // Asegura que el token esté cargado primero
+            console.log('Token cargado:', this.token);
 
+            // Una vez cargado el token, ejecuta las acciones que lo necesitan
+            await this.loadMovements();
+            await this.loadQuestions();
+        } catch (error) {
+            console.error('Error durante la inicialización:', error);
+        }
+    }
+    async loadToken() {
+        try {
+            const tokenData = await this.getTokenDecrypted();
+            if (tokenData) {
+                this.token = tokenData.jwt; // Accede al JWT
+                this.csrfToken = tokenData.csrfToken; // Accede al CSRF Token
+                console.log('Token loaded from IndexedDB:', this.token);
+            } else {
+                console.error('No token found in IndexedDB');
+            }
+        } catch (error) {
+            console.error('Error loading token from IndexedDB:', error);
+        }
+    }
+    decryptData(cipherText) {
+        const bytes = CryptoJS.AES.decrypt(cipherText, this.secretKey);
+        return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    }
+    getTokenDecrypted() {
+        return this.openDatabase().then((db) => {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction('tokens', 'readonly');
+                const store = transaction.objectStore('tokens');
+                const request = store.get('auth');
+
+                request.onsuccess = () => {
+                    if (request.result) {
+                        resolve(this.decryptData(request.result.data));
+                    } else {
+                        resolve(null);
+                    }
+                };
+                request.onerror = (event) => reject(event.target.error);
+            });
+        });
+    }
+    openDatabase() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('TokenDB', 1);
+
+            // Crear el almacén de objetos si es necesario
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                db.createObjectStore('tokens', { keyPath: 'id' });
+            };
+
+            request.onsuccess = (event) => resolve(event.target.result);
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
     async loadMovements() {
         try {
             const response = await fetch(`${this.APIURL}movements/`, {
